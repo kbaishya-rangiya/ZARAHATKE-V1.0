@@ -15,7 +15,7 @@ export default function NewArrivalsAndAside() {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    fetchProducts("new_arrivals").then(setItems).catch(() => setItems([]));
+    fetchProducts({ section: "new_arrivals" }).then(setItems).catch(() => setItems([]));
   }, []);
 
   return (

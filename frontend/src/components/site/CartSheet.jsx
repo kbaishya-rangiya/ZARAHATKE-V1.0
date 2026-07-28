@@ -1,4 +1,5 @@
 import { X, Minus, Plus, ShoppingBag } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useStore } from "@/context/StoreContext";
 
 export default function CartSheet() {
@@ -11,6 +12,7 @@ export default function CartSheet() {
     cartTotal,
     cartCount,
   } = useStore();
+  const nav = useNavigate();
 
   return (
     <>
@@ -113,7 +115,7 @@ export default function CartSheet() {
           <button
             className="w-full h-12 bg-maroon-900 text-cream-50 text-[11px] tracking-[0.28em] font-semibold hover:bg-maroon-700 transition-colors"
             data-testid="checkout-btn"
-            onClick={() => { setCartOpen(false); window.location.href = "/checkout"; }}
+            onClick={() => { setCartOpen(false); nav("/checkout"); }}
           >
             PROCEED TO CHECKOUT
           </button>

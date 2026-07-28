@@ -1,23 +1,50 @@
-import { createContext, useContext, useMemo, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
 
 const StoreContext = createContext(null);
 
+const readLS = (key, fallback) => {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const v = window.localStorage.getItem(key);
+    return v ? JSON.parse(v) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const writeLS = (key, value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* quota */
+  }
+};
+
 export const StoreProvider = ({ children }) => {
-  const [cart, setCart] = useState([]); // [{product, qty}]
-  const [wishlist, setWishlist] = useState([]); // [product]
+  const [cart, setCart] = useState(() => readLS("zk_cart", []));
+  const [wishlist, setWishlist] = useState(() => readLS("zk_wishlist", []));
   const [cartOpen, setCartOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
 
+  useEffect(() => writeLS("zk_cart", cart), [cart]);
+  useEffect(() => writeLS("zk_wishlist", wishlist), [wishlist]);
+
   const addToCart = useCallback((product) => {
     setCart((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id);
+      const key = product.id + (product.size || "");
+      const existing = prev.find(
+        (i) => i.product.id === product.id && (i.product.size || "") === (product.size || "")
+      );
       if (existing) {
         return prev.map((i) =>
-          i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i
+          i.product.id === product.id && (i.product.size || "") === (product.size || "")
+            ? { ...i, qty: i.qty + 1 }
+            : i
         );
       }
-      return [...prev, { product, qty: 1 }];
+      return [...prev, { product, qty: 1, key }];
     });
     toast.success(`${product.name} added to cart`);
   }, []);

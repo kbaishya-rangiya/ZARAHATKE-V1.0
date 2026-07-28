@@ -104,7 +104,12 @@ export default function Category() {
       </div>
 
       {/* Grid */}
-      {products.length === 0 ? (
+      {data.products.length === 0 ? (
+        <div className="py-24 text-center">
+          <div className="font-display text-2xl text-maroon-900">This collection is on its way</div>
+          <p className="text-stone-500 mt-2 text-sm">New pieces drop every week. Check back soon.</p>
+        </div>
+      ) : products.length === 0 ? (
         <div className="py-24 text-center text-stone-500">
           No products match your filters. Try adjusting the price range.
         </div>

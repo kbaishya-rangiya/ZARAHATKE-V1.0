@@ -16,7 +16,7 @@ export default function BestSellersAndFeed() {
   const [openLook, setOpenLook] = useState(null);
 
   useEffect(() => {
-    fetchProducts("best_sellers").then(setProducts).catch(() => {});
+    fetchProducts({ section: "best_sellers" }).then(setProducts).catch(() => {});
     fetchReviews().then(setReviews).catch(() => {});
     fetchInstagram().then(setFeed).catch(() => {});
   }, []);
