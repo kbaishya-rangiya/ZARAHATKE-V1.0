@@ -46,6 +46,17 @@ User provided a screenshot of a ZARAHATKE Ethnic Fashion homepage (Indian ethnic
 - Cart dedup by product.id + size (same product different sizes stay separate lines)
 - Backend: `POST /api/checkout`, `GET /api/payments/status/{id}`, `POST /api/webhook/stripe`, `GET /api/orders/{id}`, `GET /api/categories/{slug}`, `GET /api/instagram-feed/{look_id}`
 
+### Iteration 3 (2026-02-01) — Image management
+- **Public folder** support: drop files into `/app/frontend/public/images/products/` and reference by path (documented in that folder's README)
+- **Object storage + admin panel** at `/admin` (bearer-token gated via `ADMIN_TOKEN` env)
+  - Upload endpoint stores photos in Emergent-managed object storage
+  - Admin CRUD for products persisted to MongoDB (`db.products`)
+  - DB-created products bubble to the top of every listing (front page + category pages)
+  - Soft-delete with `is_deleted` guard on PATCH/DELETE
+  - Blocking `requests` calls wrapped in `run_in_threadpool` so uploads/downloads don't block the FastAPI event loop
+- `imageUrl()` helper (`src/lib/img.js`) auto-prefixes `/api/files/...` URLs with `REACT_APP_BACKEND_URL`
+- Test credentials recorded in `/app/memory/test_credentials.md`
+
 ### Verified end-to-end
 - All backend tests green (50/50 pytest cases)
 - COD checkout: add product → drawer → checkout → address → COD → order confirmation with cart cleared

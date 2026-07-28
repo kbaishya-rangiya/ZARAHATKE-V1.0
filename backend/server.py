@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Request, UploadFile, File, Header, Response
+from fastapi.concurrency import run_in_threadpool
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -494,7 +495,7 @@ async def admin_upload(
     file_id = str(uuid.uuid4())
     path = f"{APP_NAME}/products/{file_id}.{ext}"
     content_type = MIME_TYPES[ext]
-    result = put_object(path, data, content_type)
+    result = await run_in_threadpool(put_object, path, data, content_type)
     doc = {
         "id": file_id,
         "storage_path": result["path"],
@@ -505,7 +506,6 @@ async def admin_upload(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.files.insert_one(doc)
-    base = os.environ.get("PUBLIC_FILES_BASE", "")
     return {
         "id": file_id,
         "url": f"/api/files/{file_id}",
@@ -519,7 +519,7 @@ async def get_file(file_id: str):
     record = await db.files.find_one({"id": file_id, "is_deleted": False})
     if not record:
         raise HTTPException(404, "File not found")
-    data, ct = get_object(record["storage_path"])
+    data, ct = await run_in_threadpool(get_object, record["storage_path"])
     return Response(
         content=data,
         media_type=record.get("content_type", ct),
@@ -606,7 +606,10 @@ async def admin_update_product(
     updates = {k: v for k, v in payload.model_dump().items() if v is not None}
     if not updates:
         raise HTTPException(400, "No fields to update")
-    result = await db.products.update_one({"id": product_id}, {"$set": updates})
+    result = await db.products.update_one(
+        {"id": product_id, "is_deleted": {"$ne": True}},
+        {"$set": updates},
+    )
     if result.matched_count == 0:
         raise HTTPException(404, "Product not found (only DB-created products can be edited)")
     doc = await db.products.find_one({"id": product_id}, {"_id": 0})
@@ -617,7 +620,7 @@ async def admin_update_product(
 async def admin_delete_product(product_id: str, authorization: Optional[str] = Header(None)):
     require_admin(authorization)
     result = await db.products.update_one(
-        {"id": product_id},
+        {"id": product_id, "is_deleted": {"$ne": True}},
         {"$set": {"is_deleted": True, "deleted_at": datetime.now(timezone.utc).isoformat()}},
     )
     if result.matched_count == 0:
