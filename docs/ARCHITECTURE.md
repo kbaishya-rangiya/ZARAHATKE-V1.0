@@ -264,4 +264,5 @@ All requests from the browser must hit paths starting with `/api` so the Kuberne
 
 ## 9. Related docs
 
+- **[GETTING_STARTED.md](./GETTING_STARTED.md)** — how and where to run the whole flow (both on Emergent and locally on your machine)
 - **[ADMIN_GUIDE.md](./ADMIN_GUIDE.md)** — step-by-step for uploading photos into each category (Sarees, Kurtis, Lehengas, …) via the `/admin` panel
