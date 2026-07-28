@@ -28,17 +28,17 @@ export default function Header() {
       <div className="max-w-[1400px] mx-auto px-6 py-5 flex items-center gap-8">
         {/* Logo */}
         <a href="#" className="flex items-center gap-3 shrink-0" data-testid="logo-link">
-          <div className="w-12 h-12 rounded-full border border-maroon-900/30 grid place-items-center">
+          <div className="w-11 h-11 rounded-full border border-maroon-900/30 grid place-items-center">
             <span className="font-display italic text-2xl text-maroon-900">Z</span>
           </div>
-          <div className="leading-tight">
-            <div className="font-display text-2xl tracking-[0.25em] text-maroon-900">
+          <div className="leading-tight hidden sm:block">
+            <div className="font-display text-xl md:text-2xl tracking-[0.25em] text-maroon-900">
               ZARAHATKE
             </div>
             <div className="text-[9px] tracking-[0.35em] text-gold-600 uppercase">
               — Ethnic Fashion —
             </div>
-            <div className="text-[10px] italic text-stone-500 font-display">
+            <div className="hidden md:block text-[10px] italic text-stone-500 font-display">
               Tradition Woven with Elegance.
             </div>
           </div>
@@ -64,7 +64,7 @@ export default function Header() {
         </div>
 
         {/* Icons */}
-        <div className="flex items-center gap-7 shrink-0 ml-auto">
+        <div className="flex items-center gap-4 md:gap-7 shrink-0 ml-auto">
           <IconBtn icon={User} label="Account" testId="account-btn" />
           <IconBtn
             icon={Heart}

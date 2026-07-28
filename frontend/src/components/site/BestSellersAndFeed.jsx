@@ -45,7 +45,7 @@ export default function BestSellersAndFeed() {
       <div>
         <SectionHeader title="Best Sellers" testId="best-sellers-header" />
         <div className="grid grid-cols-2 md:grid-cols-2 gap-5 md:gap-6">
-          {products.slice(0, 4).map((p) => (
+          {products.slice(0, 6).map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
         </div>
