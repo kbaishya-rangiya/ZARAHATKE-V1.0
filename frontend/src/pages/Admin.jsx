@@ -119,7 +119,7 @@ function AdminDashboard({ token, onLogout }) {
     }
   };
 
-  useEffect(() => { load(); }, []); // eslint-disable-line
+  useEffect(() => { load(); }, [headers]); // reload when token changes
 
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
