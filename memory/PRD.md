@@ -57,6 +57,12 @@ User provided a screenshot of a ZARAHATKE Ethnic Fashion homepage (Indian ethnic
 - `imageUrl()` helper (`src/lib/img.js`) auto-prefixes `/api/files/...` URLs with `REACT_APP_BACKEND_URL`
 - Test credentials recorded in `/app/memory/test_credentials.md`
 
+### Iteration 4 (2026-02-01) — Bulk uploader + edit-in-place
+- **Bulk Upload tab** in `/admin`: drag or click to add up to 10 photos at once; each becomes a draft card with an inline form (name, price, category, section, tag); Save individually or Save All in one shot
+- **Edit In Place**: tap any DB product card (or its EDIT button) to open a modal that edits name, price, compare-at price, category, section, tag, description, and image (with re-upload)
+- New components: `EditProductModal.jsx`, `BulkUploader.jsx`
+- Backend PATCH already existed — no schema changes needed; upload endpoint reused for both single and bulk flows
+
 ### Verified end-to-end
 - All backend tests green (50/50 pytest cases)
 - COD checkout: add product → drawer → checkout → address → COD → order confirmation with cart cleared

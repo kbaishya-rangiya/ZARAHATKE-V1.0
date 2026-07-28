@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Upload, Trash2, Plus, LogOut, Copy, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Upload, Trash2, Plus, LogOut, Copy, CheckCircle2, ShieldCheck, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { API } from "@/lib/api";
 import axios from "axios";
+import EditProductModal from "@/components/site/EditProductModal";
+import BulkUploader from "@/components/site/BulkUploader";
 
 const LS_KEY = "zk_admin_token";
 
@@ -92,7 +94,8 @@ function AdminDashboard({ token, onLogout }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [tab, setTab] = useState("db"); // "db" | "seed"
+  const [tab, setTab] = useState("db"); // "db" | "seed" | "bulk"
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
     name: "",
     price: "",
@@ -282,7 +285,7 @@ function AdminDashboard({ token, onLogout }) {
 
         {/* Product list */}
         <div>
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-2 mb-4 flex-wrap">
             <button
               onClick={() => setTab("db")}
               className={`h-9 px-4 text-[11px] tracking-widest font-semibold transition-colors ${
@@ -291,6 +294,15 @@ function AdminDashboard({ token, onLogout }) {
               data-testid="admin-tab-db"
             >
               MY PRODUCTS ({dbProducts.length})
+            </button>
+            <button
+              onClick={() => setTab("bulk")}
+              className={`h-9 px-4 text-[11px] tracking-widest font-semibold transition-colors ${
+                tab === "bulk" ? "bg-maroon-900 text-cream-50" : "bg-white text-maroon-900 border border-cream-200"
+              }`}
+              data-testid="admin-tab-bulk"
+            >
+              BULK UPLOAD
             </button>
             <button
               onClick={() => setTab("seed")}
@@ -303,28 +315,49 @@ function AdminDashboard({ token, onLogout }) {
             </button>
           </div>
 
-          {loading && <div className="text-center py-16 text-stone-500 text-sm">Loading…</div>}
+          {tab === "bulk" ? (
+            <BulkUploader token={token} onCreated={load} />
+          ) : (
+            <>
+              {loading && <div className="text-center py-16 text-stone-500 text-sm">Loading…</div>}
 
-          {!loading && shownProducts.length === 0 && (
-            <div className="text-center py-16 border border-dashed border-cream-200 text-stone-500 text-sm">
-              {tab === "db"
-                ? "No products yet — add your first product using the form."
-                : "No seeded products."}
-            </div>
+              {!loading && shownProducts.length === 0 && (
+                <div className="text-center py-16 border border-dashed border-cream-200 text-stone-500 text-sm">
+                  {tab === "db"
+                    ? "No products yet — add your first product using the form or the Bulk Upload tab."
+                    : "No seeded products."}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {shownProducts.map((p) => (
+                  <ProductAdminCard
+                    key={p.id}
+                    product={p}
+                    editable={p.source === "db"}
+                    onEdit={() => setEditing(p)}
+                    onDelete={() => handleDelete(p.id)}
+                  />
+                ))}
+              </div>
+            </>
           )}
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {shownProducts.map((p) => (
-              <ProductAdminCard key={p.id} product={p} editable={p.source === "db"} onDelete={() => handleDelete(p.id)} />
-            ))}
-          </div>
         </div>
       </div>
+
+      {editing && (
+        <EditProductModal
+          product={editing}
+          token={token}
+          onClose={() => setEditing(null)}
+          onSaved={load}
+        />
+      )}
     </section>
   );
 }
 
-function ProductAdminCard({ product, editable, onDelete }) {
+function ProductAdminCard({ product, editable, onEdit, onDelete }) {
   const [copied, setCopied] = useState(false);
   const backend = process.env.REACT_APP_BACKEND_URL || "";
   const src = product.image?.startsWith("/api/") ? `${backend}${product.image}` : product.image;
@@ -337,8 +370,18 @@ function ProductAdminCard({ product, editable, onDelete }) {
 
   return (
     <div className="border border-cream-200 bg-white overflow-hidden" data-testid={`admin-product-${product.id}`}>
-      <div className="aspect-[3/4] bg-cream-100">
+      <div
+        className={`aspect-[3/4] bg-cream-100 relative group ${editable ? "cursor-pointer" : ""}`}
+        onClick={editable ? onEdit : undefined}
+      >
         <img src={src} alt={product.name} className="w-full h-full object-cover" />
+        {editable && (
+          <div className="absolute inset-0 bg-maroon-950/0 group-hover:bg-maroon-950/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+            <div className="bg-cream-50 text-maroon-900 h-9 px-4 flex items-center gap-2 text-[11px] tracking-widest font-semibold">
+              <Pencil size={12} /> TAP TO EDIT
+            </div>
+          </div>
+        )}
       </div>
       <div className="p-3">
         <div className="text-[12px] text-stone-800 leading-snug line-clamp-2 min-h-[32px]">{product.name}</div>
@@ -347,6 +390,16 @@ function ProductAdminCard({ product, editable, onDelete }) {
           <span className="text-[10px] tracking-widest text-stone-500 uppercase">{product.category}</span>
         </div>
         <div className="flex items-center gap-1 mt-3">
+          {editable && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="flex-1 h-8 text-[10px] tracking-widest bg-cream-100 hover:bg-cream-200 flex items-center justify-center gap-1"
+              data-testid={`admin-edit-${product.id}`}
+            >
+              <Pencil size={12} /> EDIT
+            </button>
+          )}
           <button
             type="button"
             onClick={copyId}
@@ -362,7 +415,7 @@ function ProductAdminCard({ product, editable, onDelete }) {
               className="flex-1 h-8 text-[10px] tracking-widest bg-maroon-900 text-cream-50 hover:bg-maroon-700 flex items-center justify-center gap-1"
               data-testid={`admin-delete-${product.id}`}
             >
-              <Trash2 size={12} /> DELETE
+              <Trash2 size={12} /> DEL
             </button>
           )}
         </div>

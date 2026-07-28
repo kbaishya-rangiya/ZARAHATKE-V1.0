@@ -222,7 +222,9 @@ Because it uses localStorage, the cart survives Stripe redirects and browser ref
 |---|---|---|
 | **External URL** | Set `image="https://images.unsplash.com/..."` | Stock photos, testing |
 | **Public folder** | Drop files into `/app/frontend/public/images/products/` and set `image="/images/products/your-file.jpg"` | Your own curated photo set shipped with the site |
-| **Admin uploader** | Sign into `/admin` with the token in `ADMIN_TOKEN`, upload a photo, fill in the form — product goes straight into MongoDB and appears on the site | Ongoing catalog updates without touching code |
+| **Admin — single** | Sign into `/admin`, use the left-side "Add product" form to upload one photo and fill in one form | Adding products one at a time |
+| **Admin — bulk** | Sign into `/admin` → BULK UPLOAD tab, drag up to 10 photos at once, fill in each draft card, click SAVE ALL | Fast catalog bootstrapping |
+| **Admin — edit** | Click any DB product card on the MY PRODUCTS tab to open the edit modal (name, price, category, section, tag, description, image) | Fixing typos, price changes, photo swaps |
 
 The `image` field on a product is just a string — the frontend's `imageUrl()` helper (`src/lib/img.js`) auto-prefixes `/api/...` URLs with the backend URL, and public-folder paths (`/images/...`) work as-is via React's static asset serving.
 
