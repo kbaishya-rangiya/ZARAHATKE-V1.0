@@ -1,0 +1,37 @@
+{
+  "summary": "Full-stack test of ZARAHATKE store. Backend: 16 pytest cases across all 8 endpoints (root, products + section filter, product by id/404, categories, reviews, hero-slides, instagram-feed, newsletter valid/invalid/idempotency verified directly in MongoDB) - 16/16 passed. Frontend: homepage renders all sections with no console/page errors; wishlist toggle, hover ADD TO BAG, cart sheet (qty +/-, remove, subtotal), wishlist MOVE TO BAG, hero carousel prev/next/dots, review dots, and newsletter POST /api/newsletter (200 + success toast) all work. Two cosmetic/responsive issues found; no functional blockers.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Header", "issue": "At 390px mobile viewport the icon group (Account/Wishlist/Cart/mobile menu) overflows the viewport by ~138px (group right edge = 528px). Cart and hamburger buttons are off-screen until the user scrolls horizontally; page has horizontal scroll on mobile. Desktop 1920px has 0 overflow.", "selector": "[data-testid=\"site-header\"] .flex.items-center.gap-7.shrink-0.ml-auto", "priority": "HIGH"},
+      {"component": "BestSellersAndFeed", "issue": "Best Sellers grid renders products.slice(0,4) so only 4 of the 6 best-seller products from /api/products?section=best_sellers are shown (bs5 SALE lehenga and bs6 are never rendered). Total product cards on page = 12, not 14. Confirm whether intentional.", "selector": "[data-testid^=\"product-card-bs\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Product grids / Instagram feed", "issues": ["Several Unsplash images do not match the product name (e.g. 'Beige Chanderi Embroidered Kurta Set' shows a blue outfit, 'Mustard Yellow Printed Cotton Kurta' shows a green outfit)", "Same image URL reused across multiple products (na1 and bs1 identical, na2/bs3 identical), which looks like duplicated inventory"]},
+      {"screen": "Newsletter card", "issues": ["Invalid email is only blocked by the browser's native HTML5 validation bubble; no in-app inline error/toast is shown (backend returns 422 for invalid, never reached)"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Fix mobile header layout so icons/hamburger fit within 390px viewport (shrink logo block / reduce gap / hide tagline on small screens) and remove horizontal page scroll",
+    "Decide on Best Sellers slice(0,4) - render all 6 or add a VIEW ALL that reveals them",
+    "Optionally swap Unsplash image URLs so each product image matches its name and remove duplicates",
+    "Optionally add in-app validation message for invalid newsletter email instead of relying on native browser bubble"
+  ],
+  "critical_code_review_comments": [
+    "server.py: newsletter upsert with $setOnInsert is correct and idempotent (verified single Mongo doc after duplicate POSTs); response excludes _id - good",
+    "CartSheet/WishlistSheet panels stay mounted and are translated off-canvas; they are position:fixed so they do not add document scroll, but consider aria-hidden/inert when closed for a11y",
+    "All interactive elements carry data-testid; no changes needed"
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py"],
+  "success_rate": {"backend": "100%", "frontend": "90%"},
+  "seed_data_creation": "Newsletter docs prefixed TEST_ created during API and UI tests; all deleted afterwards (newsletter collection now empty)",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend regression suite lives at /app/backend/tests/backend_test.py (pytest, uses REACT_APP_BACKEND_URL from /app/frontend/.env, cleans up TEST_ newsletter docs). All 16 pass. Frontend flows (cart, wishlist, carousel, newsletter) verified working on desktop 1920x1080; only mobile 390px header overflow and Best Sellers slice(0,4) remain open.",
+  "rca_of_the_issue": "Mobile overflow: Header top row uses a fixed logo block (12x12 avatar + 3 lines of text) plus a gap-7 icon group with no wrapping/hiding at small breakpoints, so the row's intrinsic width (~528px) exceeds a 390px viewport. Best Sellers gap: BestSellersAndFeed.jsx line 48 uses products.slice(0, 4)."
+}
