@@ -259,3 +259,9 @@ The `image` field on a product is just a string — the frontend's `imageUrl()` 
 - Admin panel uses a bearer token from `ADMIN_TOKEN` (change this to your own secret before going public).
 
 All requests from the browser must hit paths starting with `/api` so the Kubernetes ingress routes them to the backend.
+
+---
+
+## 9. Related docs
+
+- **[ADMIN_GUIDE.md](./ADMIN_GUIDE.md)** — step-by-step for uploading photos into each category (Sarees, Kurtis, Lehengas, …) via the `/admin` panel
