@@ -9,7 +9,7 @@ const SHIPPING_FLAT = 149;
 const FREE_THRESHOLD = 1999;
 
 export default function Checkout() {
-  const { cart, cartTotal, updateQty, removeFromCart } = useStore();
+  const { cart, cartTotal, updateQty, removeFromCart, clearCart } = useStore();
   const nav = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [method, setMethod] = useState("stripe");
@@ -52,6 +52,7 @@ export default function Checkout() {
       if (method === "stripe" && res.checkout_url) {
         window.location.href = res.checkout_url;
       } else if (method === "cod" && res.order_id) {
+        clearCart();
         toast.success("Order placed! Cash on delivery.");
         nav(`/order/${res.order_id}`);
       }
@@ -143,8 +144,8 @@ export default function Checkout() {
           <div className="border border-cream-200 bg-white p-6">
             <h3 className="font-display text-lg text-maroon-900 mb-4">Order Summary</h3>
             <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
-              {cart.map(({ product, qty }) => (
-                <div key={product.id + (product.size || "")} className="flex gap-3" data-testid={`summary-${product.id}`}>
+              {cart.map(({ product, qty, key }) => (
+                <div key={key || product.id + (product.size || "")} className="flex gap-3" data-testid={`summary-${product.id}`}>
                   <img src={product.image} alt={product.name} className="w-16 h-20 object-cover" />
                   <div className="flex-1">
                     <div className="text-[12px] leading-snug text-stone-800 line-clamp-2">{product.name}</div>
@@ -157,17 +158,17 @@ export default function Checkout() {
                     <div className="flex gap-3 mt-1 text-[10px] tracking-widest">
                       <button
                         type="button"
-                        onClick={() => updateQty(product.id, qty - 1)}
+                        onClick={() => updateQty(key || product.id, qty - 1)}
                         className="text-stone-500 hover:text-maroon-900"
                       >−</button>
                       <button
                         type="button"
-                        onClick={() => updateQty(product.id, qty + 1)}
+                        onClick={() => updateQty(key || product.id, qty + 1)}
                         className="text-stone-500 hover:text-maroon-900"
                       >+</button>
                       <button
                         type="button"
-                        onClick={() => removeFromCart(product.id)}
+                        onClick={() => removeFromCart(key || product.id)}
                         className="ml-auto text-stone-500 hover:text-maroon-900 uppercase"
                       >
                         Remove

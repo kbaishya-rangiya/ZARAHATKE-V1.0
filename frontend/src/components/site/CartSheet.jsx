@@ -54,9 +54,9 @@ export default function CartSheet() {
             </div>
           )}
 
-          {cart.map(({ product, qty }) => (
+          {cart.map(({ product, qty, key }) => (
             <div
-              key={product.id}
+              key={key || product.id}
               className="flex gap-4 border-b border-cream-200 pb-4"
               data-testid={`cart-item-${product.id}`}
             >
@@ -67,13 +67,16 @@ export default function CartSheet() {
               />
               <div className="flex-1">
                 <div className="text-[13px] text-stone-800 leading-snug">{product.name}</div>
+                {product.size && (
+                  <div className="text-[11px] text-stone-500 mt-0.5">Size: {product.size}</div>
+                )}
                 <div className="text-maroon-900 font-semibold text-sm mt-1">
                   ₹{(product.price * qty).toLocaleString("en-IN")}
                 </div>
                 <div className="flex items-center justify-between mt-3">
                   <div className="flex items-center border border-cream-200">
                     <button
-                      onClick={() => updateQty(product.id, qty - 1)}
+                      onClick={() => updateQty(key || product.id, qty - 1)}
                       className="w-8 h-8 grid place-items-center hover:bg-cream-100"
                       aria-label="Decrease"
                       data-testid={`cart-decrease-${product.id}`}
@@ -82,7 +85,7 @@ export default function CartSheet() {
                     </button>
                     <span className="w-8 text-center text-sm">{qty}</span>
                     <button
-                      onClick={() => updateQty(product.id, qty + 1)}
+                      onClick={() => updateQty(key || product.id, qty + 1)}
                       className="w-8 h-8 grid place-items-center hover:bg-cream-100"
                       aria-label="Increase"
                       data-testid={`cart-increase-${product.id}`}
@@ -91,7 +94,7 @@ export default function CartSheet() {
                     </button>
                   </div>
                   <button
-                    onClick={() => removeFromCart(product.id)}
+                    onClick={() => removeFromCart(key || product.id)}
                     className="text-[11px] tracking-widest text-stone-500 hover:text-maroon-900 uppercase"
                     data-testid={`cart-remove-${product.id}`}
                   >

@@ -49,15 +49,15 @@ export const StoreProvider = ({ children }) => {
     toast.success(`${product.name} added to cart`);
   }, []);
 
-  const removeFromCart = useCallback((productId) => {
-    setCart((prev) => prev.filter((i) => i.product.id !== productId));
+  const removeFromCart = useCallback((key) => {
+    setCart((prev) => prev.filter((i) => (i.key || i.product.id) !== key));
   }, []);
 
-  const updateQty = useCallback((productId, qty) => {
+  const updateQty = useCallback((key, qty) => {
     setCart((prev) =>
       qty <= 0
-        ? prev.filter((i) => i.product.id !== productId)
-        : prev.map((i) => (i.product.id === productId ? { ...i, qty } : i))
+        ? prev.filter((i) => (i.key || i.product.id) !== key)
+        : prev.map((i) => ((i.key || i.product.id) === key ? { ...i, qty } : i))
     );
   }, []);
 
