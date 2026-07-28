@@ -1,0 +1,152 @@
+{
+  "theme_identity": {
+    "brand_name": "ZARAHATKE",
+    "theme": "Indian Ethnic Fashion E-commerce",
+    "archetype": "Luxury / Editorial (Warm & Festive)",
+    "primary_vibe": "Elegant, Traditional, Premium, Trustworthy",
+    "mode": "Light mode primary. The aesthetic relies heavily on a warm, tinted cream background to allow the deep maroon and rich product colors to stand out. Do not implement a dark mode toggle as it breaks the luxury editorial feel."
+  },
+  "typography": {
+    "font_families": {
+      "headings": "Playfair Display, serif",
+      "body": "Manrope, sans-serif",
+      "accents": "Playfair Display, serif (italicized for editorial touch)"
+    },
+    "rules": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl font-normal tracking-tight leading-none text-maroon-900",
+      "h2": "text-3xl sm:text-4xl font-normal tracking-tight text-maroon-900",
+      "h3": "text-2xl sm:text-3xl font-normal text-maroon-900",
+      "labels_overlines": "text-xs font-semibold tracking-[0.2em] uppercase text-maroon-700",
+      "body": "text-base leading-relaxed text-stone-700",
+      "navigation": "text-sm font-medium tracking-wide text-stone-800 hover:text-maroon-700"
+    }
+  },
+  "colors": {
+    "background": {
+      "primary": "#FBF9F6",
+      "secondary": "#F3EFEA",
+      "maroon_surface": "#5D101C",
+      "maroon_surface_light": "#7A1525"
+    },
+    "text": {
+      "primary": "#2C1A1D",
+      "secondary": "#5C4A4D",
+      "light": "#FBF9F6",
+      "maroon": "#5D101C",
+      "gold": "#C5A059"
+    },
+    "brand": {
+      "primary": "#5D101C",
+      "accent": "#C5A059",
+      "border": "#E8E1D9"
+    },
+    "rules": "Never use pure black #000000 or pure white #FFFFFF for backgrounds. Use tinted off-whites. Primary brand color (Maroon #5D101C) should be used for CTAs, Announcement bars, and Footer. Accent (Gold #C5A059) used sparingly for star ratings, thin borders, or highlights."
+  },
+  "visual_enhancers": {
+    "borders": "1px solid #E8E1D9 for subtle section dividers and product cards. Avoid thick borders.",
+    "shadows": "Minimalist approach. Use soft ambient shadows (shadow-sm or shadow-[0_8px_32px_rgba(93,16,28,0.05)]) only on hover states for product cards and floating navigation. No harsh or dark box-shadows.",
+    "textures": "Include subtle grain or paper texture overlay on the hero section to kill 'digital flatness'.",
+    "radii": "Sharp edges (rounded-none) for a high-fashion editorial look, except for circular categories (rounded-full) and minimal radiused tags/badges (rounded-sm)."
+  },
+  "components": {
+    "announcement_bar": "Bg-maroon (#5D101C), text-light, text-xs uppercase tracking-widest, centered. Can include a slow marquee if multiple texts.",
+    "header": "Sticky top, bg-[#FBF9F6] with heavy opacity (no transparent header), 1px subtle bottom border. Logo centered or left, Navigation centered, Icons (Search, Wishlist, Cart) right. Use Lucide icons (stroke-width 1.5).",
+    "hero_carousel": "Full-width or 95% inset with 1px border. Dark maroon overlay (bg-black/30) on images. H1 text centered, 'FESTIVE COLLECTION 2026', Primary CTA button (bg-maroon, text-white, hover:bg-maroon-light).",
+    "category_tiles": "Circular (aspect-square, rounded-full), image object-cover. Text centered below, text-sm, tracking-wide. Image scales up slightly on hover.",
+    "product_card": "aspect-[3/4] or aspect-[4/5] image wrapper, overflow-hidden. Image scale-105 on hover. Absolute positioned top-right Wishlist heart. Absolute top-left 'NEW' or 'SALE' badge (bg-maroon text-white text-xs px-2 py-1). Title left-aligned, price left-aligned with Gold/Maroon text.",
+    "buttons": "Sharp rectangular (rounded-none). Primary: bg-maroon text-white hover:bg-[#7A1525]. Secondary: border border-maroon text-maroon hover:bg-maroon hover:text-white.",
+    "service_strip": "4-to-6 column grid. Minimalist stroke icons (lucide-react), text-sm font-medium.",
+    "festive_edit_cta": "Split layout (image one side, text/CTA other side) or large image with offset text box (Bento style). High editorial feel.",
+    "newsletter": "Card layout with solid Maroon background, Gold text accents, single input field and subscribe button.",
+    "footer": "Deep Maroon background (#5D101C), light cream text (#FBF9F6). Generous padding (py-20). 4-column link layout."
+  },
+  "grids_layouts": {
+    "global_spacing": "Generous spacing. Use py-16 or py-24 for main sections to give an editorial, premium breathing room.",
+    "product_grid": "grid-cols-2 on mobile, md:grid-cols-3, lg:grid-cols-4. gap-4 md:gap-8.",
+    "bento_features": "Use a staggered or asymmetric grid for the 'Why Choose Us' or 'Festive Edit' section to break monotony.",
+    "instagram_feed": "grid-cols-2 md:grid-cols-4, gap-0 or gap-1 (edge-to-edge images)."
+  },
+  "motion": {
+    "hover_states": "Product images scale-105 smoothly (transition-transform duration-500 ease-out). Buttons and links change color with 200ms transition.",
+    "scroll_reveals": "Use Framer Motion to stagger-fade-up product cards as they enter the viewport. Do not over-animate.",
+    "marquee": "Slow, smooth drift for the announcement bar or a text-based brand ribbon."
+  },
+  "accessibility": {
+    "contrast": "Ensure text over images has sufficient contrast using gradients or text-shadows.",
+    "focus_states": "focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2 focus-visible:ring-offset-[#FBF9F6]",
+    "aria_labels": "All icon buttons (cart, wishlist, arrows) must have aria-labels.",
+    "test_attributes": "All interactive elements MUST include data-testid attribute (e.g., data-testid='add-to-cart-button')."
+  },
+  "media": {
+    "image_style": "Editorial, warm tones, high contrast. Authentic Indian ethnic wear models, close-ups on textures."
+  },
+  "image_urls": {
+    "hero_banners": [
+      {
+        "url": "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb",
+        "description": "Woman in red and blue sari portrait (Use for main hero)"
+      }
+    ],
+    "categories": [
+      {
+        "category": "Sarees",
+        "url": "https://images.unsplash.com/photo-1710967074868-2041e4f44c17"
+      },
+      {
+        "category": "Kurtis",
+        "url": "https://images.unsplash.com/photo-1597983073750-16f5ded1321f"
+      },
+      {
+        "category": "Lehengas",
+        "url": "https://images.unsplash.com/photo-1569810020669-aa9d38003ea7"
+      },
+      {
+        "category": "Festive Wear",
+        "url": "https://images.unsplash.com/photo-1710967074923-2b3ebe6171c3"
+      }
+    ],
+    "festive_edit": [
+      {
+        "url": "https://images.unsplash.com/photo-1632745994322-ac4f4bb36792",
+        "description": "Woman in blue dress sitting on grass (Use for Festive Edit CTA)"
+      }
+    ],
+    "instagram_feed": [
+      {
+        "url": "https://images.unsplash.com/photo-1678805408704-eb55b9d6e395"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1739429942851-9083ee185d3d"
+      },
+      {
+        "url": "https://images.pexels.com/photos/3913942/pexels-photo-3913942.jpeg"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1600495495739-8e2a8f4ada40"
+      }
+    ],
+    "textures": [
+      {
+        "url": "https://images.unsplash.com/photo-1635424785729-c022fc1a61bd",
+        "description": "Orange and yellow flowers (Use for subtle festive background accent if needed)"
+      }
+    ]
+  },
+  "instructions_to_main_agent": {
+    "1": "Use pure HTML/Tailwind for structural and marketing layouts. Avoid Shadcn for large marketing sections to maintain asymmetry and custom styling.",
+    "2": "For interactive elements (dropdowns, sheet for mobile menu, carousel), use Shadcn UI but heavily customize the borders, radii, and colors to match the luxury theme.",
+    "3": "Implement Playfair Display for headings and Manrope for body text.",
+    "4": "Ensure the Announcement bar, Header, Hero section, Category Grid, Product Grid, Festive CTA, Why Choose Us, Insta Feed, Reviews, Newsletter, and Footer are strictly implemented as requested.",
+    "5": "Do NOT use placeholder images. Use the precise URLs provided in the image_urls section."
+  },
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Do not converge toward generic, 'on distribution' outputs. Avoid the 'AI slop' aesthetic.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Never apply universal transition (transition: all). Use specific transitions (transition-colors, transition-transform).",
+    "Do not center align the app container (.App { text-align: center; } is banned).",
+    "Every interaction needs micro-animations - hover states, transitions, entrance animations.",
+    "Do not use AI assistant Emoji characters (🤖🧠💭💡) for icons. Use lucide-react.",
+    "Prioritize using pre-existing components from src/components/ui when applicable.",
+    "Include data-testid on all interactive elements for robust automated testing."
+  ]
+}
