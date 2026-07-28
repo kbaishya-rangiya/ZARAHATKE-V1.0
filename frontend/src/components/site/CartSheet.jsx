@@ -110,12 +110,13 @@ export default function CartSheet() {
               </span>
             </div>
             <p className="text-xs text-stone-500">Shipping and taxes calculated at checkout.</p>
-            <button
-              className="w-full h-12 bg-maroon-900 text-cream-50 text-[11px] tracking-[0.28em] font-semibold hover:bg-maroon-700 transition-colors"
-              data-testid="checkout-btn"
-            >
-              PROCEED TO CHECKOUT
-            </button>
+          <button
+            className="w-full h-12 bg-maroon-900 text-cream-50 text-[11px] tracking-[0.28em] font-semibold hover:bg-maroon-700 transition-colors"
+            data-testid="checkout-btn"
+            onClick={() => { setCartOpen(false); window.location.href = "/checkout"; }}
+          >
+            PROCEED TO CHECKOUT
+          </button>
           </div>
         )}
       </aside>

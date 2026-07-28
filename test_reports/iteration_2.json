@@ -1,0 +1,68 @@
+{
+  "summary": "Iteration 2 full-stack testing of ZARAHATKE (PDP, Category listing+filters, Stripe/COD checkout, Shoppable Instagram). Backend: 50/50 pytest tests pass (all new + regression endpoints). Frontend: all requested flows verified except one CRITICAL defect — the cart drawer's 'PROCEED TO CHECKOUT' button uses window.location.href, which forces a full page reload; since the cart lives in React Context with no persistence, the cart is wiped and /checkout always renders 'Your bag is empty'.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "CartSheet",
+        "issue": "PROCEED TO CHECKOUT uses window.location.href = '/checkout' -> full page reload wipes the React-Context cart. /checkout always shows the 'Your bag is empty' state. Reproduced twice (add via PDP ADD TO BAG, and via ProductCard ADD TO BAG). Fix: use react-router navigate('/checkout') and/or persist cart in localStorage.",
+        "selector": "[data-testid=\"checkout-btn\"]",
+        "priority": "CRITICAL"
+      },
+      {
+        "component": "StoreContext / PaymentCancel",
+        "issue": "Cart is useState-only with no localStorage persistence. After the Stripe redirect (window.location.href to checkout.stripe.com) and return to /payment/cancel, the cart is empty, yet the page claims 'No charge was made. Your bag is still saved — you can retry any time.' RETRY CHECKOUT then lands on the empty-bag state.",
+        "selector": "[data-testid=\"payment-cancel\"]",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Category (empty category)",
+        "issue": "/category/dresses, /category/dupattas, /category/co-ord-sets have 0 seeded products and show 'No products match your filters. Try adjusting the price range.' which is misleading when the category itself is empty.",
+        "selector": "[data-testid=\"category-page\"]",
+        "priority": "LOW"
+      },
+      {
+        "component": "Category filter/sort selects",
+        "issue": "React hydration console error: '<span> cannot be a child of <option>' emitted on every Category page load (from the SORTS/price option labels). Noisy but non-blocking.",
+        "selector": "[data-testid=\"filter-sort\"]",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Cart drawer -> Checkout",
+        "issue": "Checkout is unreachable with items from the cart drawer (cart cleared by full reload). Only PDP 'BUY IT NOW' reaches a populated checkout.",
+        "affected_selectors": ["[data-testid=\"checkout-btn\"]", "[data-testid=\"checkout-empty\"]"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_new_features.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "CRITICAL: Replace window.location.href in CartSheet checkout-btn with react-router useNavigate('/checkout').",
+    "HIGH: Persist cart (and wishlist) to localStorage in StoreContext so the Stripe redirect round-trip and any reload keeps the bag, matching the /payment/cancel copy.",
+    "LOW: Show a dedicated 'No products in this collection yet' message for genuinely empty categories.",
+    "LOW: Fix the <span> inside <option> hydration warning in Category.jsx filter/sort selects.",
+    "Consider: StoreContext.addToCart dedupes by product.id only, so the same product added in two different sizes merges into one line and the second size is dropped."
+  ],
+  "critical_code_review_comments": [
+    "CartSheet.jsx line ~115: window.location.href inside an SPA discards all in-memory state — always use navigate() for internal routes.",
+    "context/StoreContext.jsx: cart/wishlist held in useState with no persistence; any full reload (Stripe redirect, cancel return, refresh) loses the bag.",
+    "server.py compute_totals is authoritative server-side (good). Stripe amount passed as float rupees for INR — verify emergentintegrations converts to paise; totals matched (bs1 4199 -> order.total 4199), but the Stripe-side amount was not asserted."
+  ],
+  "updated_files": ["/app/backend/tests/test_new_features.py"],
+  "success_rate": {"backend": "100%", "frontend": "85%"},
+  "seed_data_creation": "Created COD + Stripe test orders in db.orders (address full_name 'TEST_QA User' / 'QA Tester', email qa_test@example.com, qa_fe@example.com) and newsletter entries TEST_qa2@example.com.",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "Not applicable — app has no auth. /app/memory/test_credentials.md not required.",
+  "context_for_next_testing_agent": "Backend fully covered by /app/backend/tests/test_new_features.py (50 tests incl. backend_test.py, all green). Verified frontend flows: home sections, header nav for all 5 category links, homepage category tiles, Category filters (price 4->3 cards) and sort (order changes), PDP (size chips XS-XL, qty +/-, alert 'Please select a size', ADD TO BAG opens drawer, BUY IT NOW -> /checkout), COD end-to-end (order confirmation page with order-id, item, address, totals), Stripe POST returns https://checkout.stripe.com/c/pay/cs_test_... (verified via route interception; Stripe hosted page NOT completed), /payment/cancel renders, Shoppable Instagram modal (3 products, caption, shoppable-add works, product link navigates + closes modal), wishlist & cart header counters. NOT tested: /payment/success polling (requires an actually paid session). After the CartSheet navigate fix, re-run: add to cart from a ProductCard -> open drawer -> PROCEED TO CHECKOUT -> expect checkout-page with items.",
+  "rca_of_the_issue": "CartSheet.jsx uses `window.location.href = '/checkout'` for the PROCEED TO CHECKOUT button. That performs a browser-level navigation which unmounts and re-creates the React tree; StoreProvider re-initialises `cart` to [] because it is plain useState with no localStorage hydration. Result: /checkout renders the checkout-empty branch (`if (cart.length === 0)`), so the user can never check out from the cart drawer. Same root cause makes the /payment/cancel 'your bag is still saved' promise false after returning from Stripe. Fix = useNavigate() for the internal route + persist cart to localStorage."
+}

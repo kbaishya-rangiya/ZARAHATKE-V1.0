@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { fetchCategories } from "@/lib/api";
 
 export default function Categories() {
@@ -23,11 +24,11 @@ export default function Categories() {
 
       <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-9 gap-6 md:gap-8">
         {cats.map((c) => (
-          <a
+          <Link
             key={c.name}
-            href="#"
+            to={`/category/${c.slug}`}
             className="group flex flex-col items-center"
-            data-testid={`category-${c.name.toLowerCase().replace(/\s+/g, "-")}`}
+            data-testid={`category-${c.slug}`}
           >
             <div className="w-full aspect-square rounded-full overflow-hidden border border-cream-200 group-hover:border-gold-500 transition-colors">
               <img
@@ -40,12 +41,11 @@ export default function Categories() {
             <div className="mt-4 text-[13px] tracking-wide text-stone-800 group-hover:text-maroon-900 transition-colors text-center font-medium">
               {c.name}
             </div>
-          </a>
+          </Link>
         ))}
 
-        {/* Sale bubble */}
-        <a
-          href="#"
+        <Link
+          to="/category/wedding-collection"
           className="group flex flex-col items-center"
           data-testid="category-sale"
         >
@@ -59,7 +59,7 @@ export default function Categories() {
           <div className="mt-4 text-[13px] tracking-wide text-maroon-900 font-semibold">
             Sale
           </div>
-        </a>
+        </Link>
       </div>
     </section>
   );

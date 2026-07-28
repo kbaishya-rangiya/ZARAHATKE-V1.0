@@ -4,6 +4,7 @@ import { fetchProducts, fetchReviews, fetchInstagram, subscribeNewsletter } from
 import { toast } from "sonner";
 import ProductCard from "./ProductCard";
 import { SectionHeader } from "./NewArrivalsAndAside";
+import ShoppableLookModal from "./ShoppableLookModal";
 
 export default function BestSellersAndFeed() {
   const [products, setProducts] = useState([]);
@@ -12,6 +13,7 @@ export default function BestSellersAndFeed() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [reviewIdx, setReviewIdx] = useState(0);
+  const [openLook, setOpenLook] = useState(null);
 
   useEffect(() => {
     fetchProducts("best_sellers").then(setProducts).catch(() => {});
@@ -65,11 +67,13 @@ export default function BestSellersAndFeed() {
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           {feed.map((f) => (
-            <a
+            <button
               key={f.id}
-              href="#"
+              type="button"
+              onClick={() => setOpenLook(f.id)}
               className="relative aspect-square overflow-hidden group"
               data-testid={`insta-${f.id}`}
+              aria-label={`Shop the look: ${f.caption || ""}`}
             >
               <img
                 src={f.image}
@@ -77,13 +81,11 @@ export default function BestSellersAndFeed() {
                 loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-maroon-950/0 group-hover:bg-maroon-950/40 transition-colors grid place-items-center">
-                <Instagram
-                  size={22}
-                  className="text-cream-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                />
+              <div className="absolute inset-0 bg-maroon-950/0 group-hover:bg-maroon-950/50 transition-colors flex flex-col items-center justify-center text-cream-50 opacity-0 group-hover:opacity-100">
+                <Instagram size={22} />
+                <div className="text-[10px] tracking-[0.2em] mt-1 uppercase">Shop the look</div>
               </div>
-            </a>
+            </button>
           ))}
         </div>
         <button
@@ -186,6 +188,7 @@ export default function BestSellersAndFeed() {
           </form>
         </div>
       </div>
+      <ShoppableLookModal lookId={openLook} onClose={() => setOpenLook(null)} />
     </section>
   );
 }

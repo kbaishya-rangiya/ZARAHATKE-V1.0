@@ -1,23 +1,25 @@
 import { Search, User, Heart, ShoppingBag, Menu } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useStore } from "@/context/StoreContext";
 import { useState } from "react";
 
 const navLinks = [
-  "HOME",
-  "SHOP",
-  "NEW ARRIVALS",
-  "SAREES",
-  "KURTIS",
-  "KURTA SETS",
-  "LEHENGAS",
-  "FESTIVE WEAR",
-  "WEDDING COLLECTION",
-  "SALE",
+  { label: "HOME", to: "/" },
+  { label: "SHOP", to: "/category/sarees" },
+  { label: "NEW ARRIVALS", to: "/category/sarees" },
+  { label: "SAREES", to: "/category/sarees" },
+  { label: "KURTIS", to: "/category/kurtis" },
+  { label: "KURTA SETS", to: "/category/kurta-sets" },
+  { label: "LEHENGAS", to: "/category/lehengas" },
+  { label: "FESTIVE WEAR", to: "/category/wedding-collection" },
+  { label: "WEDDING COLLECTION", to: "/category/wedding-collection" },
+  { label: "SALE", to: "/category/lehengas" },
 ];
 
 export default function Header() {
   const { cartCount, wishlist, setCartOpen, setWishlistOpen } = useStore();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const nav = useNavigate();
 
   return (
     <header
@@ -27,7 +29,7 @@ export default function Header() {
       {/* Top row */}
       <div className="max-w-[1400px] mx-auto px-6 py-5 flex items-center gap-8">
         {/* Logo */}
-        <a href="#" className="flex items-center gap-3 shrink-0" data-testid="logo-link">
+        <Link to="/" className="flex items-center gap-3 shrink-0" data-testid="logo-link">
           <div className="w-11 h-11 rounded-full border border-maroon-900/30 grid place-items-center">
             <span className="font-display italic text-2xl text-maroon-900">Z</span>
           </div>
@@ -42,7 +44,7 @@ export default function Header() {
               Tradition Woven with Elegance.
             </div>
           </div>
-        </a>
+        </Link>
 
         {/* Search */}
         <div className="flex-1 max-w-2xl hidden md:block">
@@ -98,18 +100,18 @@ export default function Header() {
       >
         <ul className="max-w-[1400px] mx-auto px-6 flex items-center justify-center gap-9 py-3.5">
           {navLinks.map((n, i) => (
-            <li key={n}>
-              <a
-                href="#"
+            <li key={n.label + i}>
+              <Link
+                to={n.to}
                 className={`text-[12px] tracking-[0.14em] font-medium transition-colors ${
                   i === 0
                     ? "text-maroon-900 border-b-2 border-maroon-900 pb-1"
                     : "text-stone-700 hover:text-maroon-900"
                 }`}
-                data-testid={`nav-${n.toLowerCase().replace(/\s+/g, "-")}`}
+                data-testid={`nav-${n.label.toLowerCase().replace(/\s+/g, "-")}`}
               >
-                {n}
-              </a>
+                {n.label}
+              </Link>
             </li>
           ))}
         </ul>
@@ -119,14 +121,15 @@ export default function Header() {
       {mobileOpen && (
         <div className="lg:hidden border-t border-cream-200 bg-cream-50">
           <ul className="px-6 py-4 grid gap-3">
-            {navLinks.map((n) => (
-              <li key={n}>
-                <a
-                  href="#"
+            {navLinks.map((n, i) => (
+              <li key={n.label + i}>
+                <Link
+                  to={n.to}
+                  onClick={() => setMobileOpen(false)}
                   className="text-sm tracking-widest text-stone-800 hover:text-maroon-900"
                 >
-                  {n}
-                </a>
+                  {n.label}
+                </Link>
               </li>
             ))}
           </ul>
