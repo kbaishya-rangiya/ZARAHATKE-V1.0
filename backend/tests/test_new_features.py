@@ -235,7 +235,7 @@ class TestRegression:
 
     def test_products(self, api):
         r = api.get(f"{BASE_URL}/api/products", timeout=30)
-        assert r.status_code == 200 and len(r.json()) == 14
+        assert r.status_code == 200 and len(r.json()) >= 14
 
     def test_reviews(self, api):
         r = api.get(f"{BASE_URL}/api/reviews", timeout=30)

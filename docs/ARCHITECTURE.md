@@ -216,20 +216,33 @@ Because it uses localStorage, the cart survives Stripe redirects and browser ref
 
 ## 7. Where to make common changes
 
+### Product photos — three ways to source images
+
+| Source | How to use it | Best for |
+|---|---|---|
+| **External URL** | Set `image="https://images.unsplash.com/..."` | Stock photos, testing |
+| **Public folder** | Drop files into `/app/frontend/public/images/products/` and set `image="/images/products/your-file.jpg"` | Your own curated photo set shipped with the site |
+| **Admin uploader** | Sign into `/admin` with the token in `ADMIN_TOKEN`, upload a photo, fill in the form — product goes straight into MongoDB and appears on the site | Ongoing catalog updates without touching code |
+
+The `image` field on a product is just a string — the frontend's `imageUrl()` helper (`src/lib/img.js`) auto-prefixes `/api/...` URLs with the backend URL, and public-folder paths (`/images/...`) work as-is via React's static asset serving.
+
+### Editable configuration
+
 | I want to change… | Edit this file |
 |---|---|
 | Section order or add/remove a section on the homepage | `src/pages/Home.jsx` |
 | The maroon strip at the very top | `src/components/site/AnnouncementBar.jsx` |
 | Hero slides (title, subtitle, image) | `backend/server.py` → `HERO_SLIDES` |
 | Category tiles | `backend/server.py` → `CATEGORIES` |
-| New Arrivals / Best Sellers products | `backend/server.py` → `NEW_ARRIVALS` / `BEST_SELLERS` |
+| Seeded New Arrivals / Best Sellers | `backend/server.py` → `NEW_ARRIVALS` / `BEST_SELLERS` |
+| Add new products at runtime | Sign in at `/admin` and use the upload form |
 | Instagram looks + products in each look | `backend/server.py` → `INSTAGRAM_LOOKS` |
 | Customer reviews | `backend/server.py` → `REVIEWS` |
 | Site colors, fonts, spacing tokens | `frontend/tailwind.config.js` + `src/index.css` |
 | Header nav links | `src/components/site/Header.jsx` → `navLinks` |
 | Footer columns / social / payment badges | `src/components/site/Footer.jsx` |
 | Shipping cost / free-shipping threshold | `backend/server.py` → `SHIPPING_FLAT_RATE_INR`, `FREE_SHIPPING_THRESHOLD_INR` |
-| Toast styling | `src/App.js` → `<Toaster />` props |
+| Admin password | `backend/.env` → `ADMIN_TOKEN` (restart backend after change) |
 
 ---
 
@@ -240,5 +253,7 @@ Because it uses localStorage, the cart survives Stripe redirects and browser ref
 - Frontend calls the backend via `process.env.REACT_APP_BACKEND_URL` — never hard-coded.
 - MongoDB is available at `MONGO_URL` and `DB_NAME` from `backend/.env`.
 - Stripe uses `STRIPE_API_KEY` (`sk_test_emergent` — Emergent's shared sandbox because India isn't supported for claimable sandboxes yet).
+- Object storage uses `EMERGENT_LLM_KEY` (Emergent's shared storage endpoint).
+- Admin panel uses a bearer token from `ADMIN_TOKEN` (change this to your own secret before going public).
 
 All requests from the browser must hit paths starting with `/api` so the Kubernetes ingress routes them to the backend.

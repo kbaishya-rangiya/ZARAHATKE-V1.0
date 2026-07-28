@@ -34,27 +34,28 @@ class TestProducts:
         r = api.get(f"{BASE_URL}/api/products", timeout=30)
         assert r.status_code == 200
         data = r.json()
-        assert len(data) == 14
-        assert sum(1 for p in data if p["section"] == "new_arrivals") == 8
-        assert sum(1 for p in data if p["section"] == "best_sellers") == 6
+        # counts are >= seed counts since admin-created DB products are merged in
+        assert len(data) >= 14
+        assert sum(1 for p in data if p["section"] == "new_arrivals") >= 8
+        assert sum(1 for p in data if p["section"] == "best_sellers") >= 6
         for p in data:
             assert isinstance(p["id"], str) and p["id"]
             assert isinstance(p["price"], int)
-            assert p["image"].startswith("http")
+            assert p["image"].startswith("http") or p["image"].startswith("/")
             assert "_id" not in p
 
     def test_new_arrivals(self, api):
         r = api.get(f"{BASE_URL}/api/products", params={"section": "new_arrivals"}, timeout=30)
         assert r.status_code == 200
         data = r.json()
-        assert len(data) == 8
+        assert len(data) >= 8
         assert all(p["section"] == "new_arrivals" for p in data)
 
     def test_best_sellers(self, api):
         r = api.get(f"{BASE_URL}/api/products", params={"section": "best_sellers"}, timeout=30)
         assert r.status_code == 200
         data = r.json()
-        assert len(data) == 6
+        assert len(data) >= 6
         assert all(p["section"] == "best_sellers" for p in data)
 
     def test_unknown_section_empty(self, api):

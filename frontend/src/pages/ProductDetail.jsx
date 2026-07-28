@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { Heart, ShoppingBag, Star, Truck, RefreshCcw, ShieldCheck, ChevronRight } from "lucide-react";
 import { fetchProduct, fetchProducts } from "@/lib/api";
 import { useStore } from "@/context/StoreContext";
+import { imageUrl } from "@/lib/img";
 import ProductCard from "@/components/site/ProductCard";
 
 export default function ProductDetail() {
@@ -58,12 +59,12 @@ export default function ProductDetail() {
         {/* Gallery */}
         <div className="grid grid-cols-1 gap-3">
           <div className="aspect-[3/4] bg-cream-100 overflow-hidden border border-cream-200">
-            <img src={product.image} alt={product.name} className="w-full h-full object-cover" data-testid="product-main-image" />
+            <img src={imageUrl(product.image)} alt={product.name} className="w-full h-full object-cover" data-testid="product-main-image" />
           </div>
           <div className="grid grid-cols-4 gap-3">
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="aspect-square bg-cream-100 border border-cream-200 overflow-hidden">
-                <img src={product.image} alt="" className="w-full h-full object-cover opacity-90" />
+                <img src={imageUrl(product.image)} alt="" className="w-full h-full object-cover opacity-90" />
               </div>
             ))}
           </div>

@@ -1,11 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Heart, ShoppingBag } from "lucide-react";
 import { useStore } from "@/context/StoreContext";
+import { imageUrl } from "@/lib/img";
 
 export default function ProductCard({ product, compact = false }) {
   const { addToCart, toggleWishlist, inWishlist } = useStore();
   const nav = useNavigate();
   const wished = inWishlist(product.id);
+  const src = imageUrl(product.image);
 
   const go = (e) => {
     if (e.target.closest("[data-stop]")) return;
@@ -20,7 +22,7 @@ export default function ProductCard({ product, compact = false }) {
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-cream-100 border border-cream-200">
         <img
-          src={product.image}
+          src={src}
           alt={product.name}
           loading="lazy"
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"

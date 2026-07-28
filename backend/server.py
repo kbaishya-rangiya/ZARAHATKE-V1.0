@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Request, UploadFile, File, Header, Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -8,6 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import List, Optional, Literal
 import uuid
+import requests
 from datetime import datetime, timezone
 
 from emergentintegrations.payments.stripe.checkout import (
@@ -170,12 +171,95 @@ SHIPPING_FLAT_RATE_INR = 149
 FREE_SHIPPING_THRESHOLD_INR = 1999
 
 
+# ---------- OBJECT STORAGE ----------
+STORAGE_URL = "https://integrations.emergentagent.com/objstore/api/v1/storage"
+EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
+APP_NAME = "zarahatke"
+storage_key: Optional[str] = None
+MIME_TYPES = {
+    "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+    "gif": "image/gif", "webp": "image/webp",
+}
+
+
+def init_storage() -> Optional[str]:
+    global storage_key
+    if storage_key:
+        return storage_key
+    if not EMERGENT_KEY:
+        logging.warning("EMERGENT_LLM_KEY not set; object storage disabled")
+        return None
+    try:
+        resp = requests.post(
+            f"{STORAGE_URL}/init",
+            json={"emergent_key": EMERGENT_KEY},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        storage_key = resp.json()["storage_key"]
+        return storage_key
+    except Exception as e:
+        logging.error(f"Storage init failed: {e}")
+        return None
+
+
+def put_object(path: str, data: bytes, content_type: str) -> dict:
+    key = init_storage()
+    if not key:
+        raise HTTPException(503, "Object storage unavailable")
+    resp = requests.put(
+        f"{STORAGE_URL}/objects/{path}",
+        headers={"X-Storage-Key": key, "Content-Type": content_type},
+        data=data,
+        timeout=120,
+    )
+    if resp.status_code == 403:
+        # Refresh key once
+        globals()["storage_key"] = None
+        key = init_storage()
+        resp = requests.put(
+            f"{STORAGE_URL}/objects/{path}",
+            headers={"X-Storage-Key": key, "Content-Type": content_type},
+            data=data,
+            timeout=120,
+        )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def get_object(path: str) -> tuple[bytes, str]:
+    key = init_storage()
+    if not key:
+        raise HTTPException(503, "Object storage unavailable")
+    resp = requests.get(
+        f"{STORAGE_URL}/objects/{path}",
+        headers={"X-Storage-Key": key},
+        timeout=60,
+    )
+    resp.raise_for_status()
+    return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
+
+
+def require_admin(authorization: Optional[str]) -> None:
+    expected = os.environ.get("ADMIN_TOKEN", "")
+    if not expected:
+        raise HTTPException(500, "Admin token not configured")
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(401, "Missing bearer token")
+    if authorization.split(" ", 1)[1].strip() != expected:
+        raise HTTPException(403, "Invalid admin token")
+
+
 # ---------- HELPERS ----------
-def compute_totals(items: List[CartItem]) -> dict:
+async def compute_totals(items: List[CartItem]) -> dict:
     line_items = []
     subtotal = 0
     for item in items:
         p = PRODUCTS_BY_ID.get(item.product_id)
+        if not p:
+            doc = await db.products.find_one({"id": item.product_id, "is_deleted": {"$ne": True}}, {"_id": 0})
+            if doc:
+                p = Product(**doc)
         if not p:
             raise HTTPException(400, f"Unknown product: {item.product_id}")
         line_total = p.price * item.quantity
@@ -201,7 +285,8 @@ async def root():
 
 @api_router.get("/products", response_model=List[Product])
 async def list_products(section: Optional[str] = None, category: Optional[str] = None):
-    results = ALL_PRODUCTS
+    # DB-created products come first (newest additions bubble to the top)
+    results = await _load_db_products() + list(ALL_PRODUCTS)
     if section:
         results = [p for p in results if p.section == section]
     if category:
@@ -212,9 +297,12 @@ async def list_products(section: Optional[str] = None, category: Optional[str] =
 @api_router.get("/products/{product_id}", response_model=Product)
 async def get_product(product_id: str):
     p = PRODUCTS_BY_ID.get(product_id)
-    if not p:
-        raise HTTPException(status_code=404, detail="Product not found")
-    return p
+    if p:
+        return p
+    doc = await db.products.find_one({"id": product_id, "is_deleted": {"$ne": True}}, {"_id": 0})
+    if doc:
+        return Product(**doc)
+    raise HTTPException(status_code=404, detail="Product not found")
 
 
 @api_router.get("/categories")
@@ -227,7 +315,10 @@ async def category_detail(slug: str):
     c = CATEGORY_BY_SLUG.get(slug)
     if not c:
         raise HTTPException(404, "Category not found")
-    products = [p for p in ALL_PRODUCTS if p.category.lower() == c["name"].lower()]
+    all_products = list(ALL_PRODUCTS) + await _load_db_products()
+    products = [p for p in all_products if p.category.lower() == c["name"].lower()]
+    # DB products (uploaded by admin) come first
+    products = sorted(products, key=lambda x: 0 if x.id not in PRODUCTS_BY_ID else 1)
     return {"category": c, "products": products}
 
 
@@ -272,7 +363,7 @@ async def subscribe_newsletter(payload: NewsletterCreate):
 async def create_checkout(payload: CheckoutInitRequest, request: Request):
     if not payload.items:
         raise HTTPException(400, "Cart is empty")
-    totals = compute_totals(payload.items)
+    totals = await compute_totals(payload.items)
 
     order_id = str(uuid.uuid4())
     order_doc = {
@@ -385,6 +476,159 @@ async def get_order(order_id: str):
     if not order:
         raise HTTPException(404, "Order not found")
     return order
+
+
+# ---------- ADMIN: UPLOAD + FILES ----------
+@api_router.post("/admin/upload")
+async def admin_upload(
+    file: UploadFile = File(...),
+    authorization: Optional[str] = Header(None),
+):
+    require_admin(authorization)
+    ext = (file.filename or "").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else "bin"
+    if ext not in MIME_TYPES:
+        raise HTTPException(400, f"Unsupported file type: .{ext}")
+    data = await file.read()
+    if len(data) > 8 * 1024 * 1024:
+        raise HTTPException(400, "File too large (max 8 MB)")
+    file_id = str(uuid.uuid4())
+    path = f"{APP_NAME}/products/{file_id}.{ext}"
+    content_type = MIME_TYPES[ext]
+    result = put_object(path, data, content_type)
+    doc = {
+        "id": file_id,
+        "storage_path": result["path"],
+        "original_filename": file.filename,
+        "content_type": content_type,
+        "size": result.get("size", len(data)),
+        "is_deleted": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.files.insert_one(doc)
+    base = os.environ.get("PUBLIC_FILES_BASE", "")
+    return {
+        "id": file_id,
+        "url": f"/api/files/{file_id}",
+        "path": result["path"],
+        "size": doc["size"],
+    }
+
+
+@api_router.get("/files/{file_id}")
+async def get_file(file_id: str):
+    record = await db.files.find_one({"id": file_id, "is_deleted": False})
+    if not record:
+        raise HTTPException(404, "File not found")
+    data, ct = get_object(record["storage_path"])
+    return Response(
+        content=data,
+        media_type=record.get("content_type", ct),
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+# ---------- ADMIN: PRODUCT CRUD ----------
+class ProductCreate(BaseModel):
+    name: str
+    price: int
+    image: str
+    category: str
+    section: str = "new_arrivals"
+    original_price: Optional[int] = None
+    tag: Optional[str] = None
+    description: Optional[str] = None
+    sizes: Optional[List[str]] = None
+
+
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    price: Optional[int] = None
+    image: Optional[str] = None
+    category: Optional[str] = None
+    section: Optional[str] = None
+    original_price: Optional[int] = None
+    tag: Optional[str] = None
+    description: Optional[str] = None
+    sizes: Optional[List[str]] = None
+
+
+async def _load_db_products() -> List[Product]:
+    docs = await db.products.find({"is_deleted": {"$ne": True}}, {"_id": 0}).to_list(500)
+    result = []
+    for d in docs:
+        try:
+            result.append(Product(**d))
+        except Exception as e:
+            logging.warning(f"Skipping invalid product doc: {e}")
+    return result
+
+
+@api_router.get("/admin/products")
+async def admin_list_products(authorization: Optional[str] = Header(None)):
+    require_admin(authorization)
+    seeded = [{**p.model_dump(), "source": "seed"} for p in ALL_PRODUCTS]
+    db_products = [{**p.model_dump(), "source": "db"} for p in await _load_db_products()]
+    return {"products": db_products + seeded}
+
+
+@api_router.post("/admin/products", response_model=Product)
+async def admin_create_product(
+    payload: ProductCreate,
+    authorization: Optional[str] = Header(None),
+):
+    require_admin(authorization)
+    prod = Product(
+        id=str(uuid.uuid4()),
+        name=payload.name,
+        price=payload.price,
+        image=payload.image,
+        category=payload.category,
+        section=payload.section,
+        original_price=payload.original_price,
+        tag=payload.tag,
+        description=payload.description or "Handcrafted in India with premium fabric.",
+        sizes=payload.sizes or ["XS", "S", "M", "L", "XL"],
+    )
+    doc = prod.model_dump()
+    doc["is_deleted"] = False
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.products.insert_one(doc)
+    return prod
+
+
+@api_router.patch("/admin/products/{product_id}", response_model=Product)
+async def admin_update_product(
+    product_id: str,
+    payload: ProductUpdate,
+    authorization: Optional[str] = Header(None),
+):
+    require_admin(authorization)
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(400, "No fields to update")
+    result = await db.products.update_one({"id": product_id}, {"$set": updates})
+    if result.matched_count == 0:
+        raise HTTPException(404, "Product not found (only DB-created products can be edited)")
+    doc = await db.products.find_one({"id": product_id}, {"_id": 0})
+    return Product(**doc)
+
+
+@api_router.delete("/admin/products/{product_id}")
+async def admin_delete_product(product_id: str, authorization: Optional[str] = Header(None)):
+    require_admin(authorization)
+    result = await db.products.update_one(
+        {"id": product_id},
+        {"$set": {"is_deleted": True, "deleted_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(404, "Product not found")
+    return {"deleted": True, "id": product_id}
+
+
+@api_router.post("/admin/verify")
+async def admin_verify(authorization: Optional[str] = Header(None)):
+    require_admin(authorization)
+    return {"ok": True}
 
 
 app.include_router(api_router)

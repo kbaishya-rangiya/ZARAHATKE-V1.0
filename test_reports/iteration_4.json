@@ -1,0 +1,53 @@
+{
+  "summary": "Iteration 4 focused on the new image-management feature set: admin bearer auth, Emergent object-storage upload, /api/files serving, admin product CRUD, DB-before-seed ordering, and the /admin React panel. Backend: 71 pytest cases across 3 files (backend_test.py, test_new_features.py, new test_admin_images.py) -> 70 passed, 1 failed (minor edge case). Frontend: full /admin flow exercised end-to-end with Playwright (login gate, invalid token, upload roundtrip, create, storefront visibility, product detail, delete) - all passed. All products created during testing were deleted.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PATCH /api/admin/products/{id}", "issue": "Updating a SOFT-DELETED product returns 200 instead of 404. The Mongo filter is {'id': product_id} without 'is_deleted': {'$ne': True}, so a deleted product can still be mutated (and if a future PATCH ever sets is_deleted it would resurrect). Same missing guard exists in DELETE (deleting an already-deleted product returns 200)."},
+      {"endpoint": "POST /api/admin/upload", "issue": "Dead code: `base = os.environ.get('PUBLIC_FILES_BASE', '')` is computed and never used."},
+      {"endpoint": "DELETE /api/admin/products/{id}", "issue": "Deleting a product does not soft-delete / remove the associated uploaded file in db.files or object storage -> orphaned objects accumulate. No endpoint exists to delete a file."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/category/kurtis (and other pages with the sort/price <select>)", "issues": ["React console error on every render: 'In HTML, <span> cannot be a child of <option>. This will cause a hydration error.' Triggered by dynamic option labels in Category.jsx line ~100 being wrapped by the preview instrumentation. Cosmetic/console-only but pollutes the console and can break hydration."]},
+      {"screen": "Admin dashboard", "issues": ["Delete uses the native window.confirm() browser dialog instead of a styled AlertDialog, inconsistent with the rest of the design system."]},
+      {"screen": "Storefront product grids", "issues": ["Several seeded Unsplash images are not relevant to the product name (e.g. na3 'Green Floral Printed A-Line Kurta' renders a saree portrait; na5 renders an unrelated portrait). Pre-existing content issue, not a regression."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_admin_images.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/backend/tests/test_new_features.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Add is_deleted guard to admin PATCH/DELETE product Mongo filters so soft-deleted products return 404.",
+    "Wrap put_object()/get_object() (blocking `requests` calls) in fastapi.concurrency.run_in_threadpool or switch to httpx.AsyncClient — today every /api/files/{id} image request and every 8 MB upload blocks the FastAPI event loop; the whole storefront proxies its admin images through this route.",
+    "Remove unused PUBLIC_FILES_BASE line in admin_upload.",
+    "Populate /app/memory/test_credentials.md with the admin token (currently the file is an empty template).",
+    "Optional: clean up the leftover demo product 'Test Ruby Kurti' (id a77401c2-ee64-4dff-8c51-3dfc92942b74) that is currently live and first on the home page / Kurtis category.",
+    "Optional: delete or soft-delete the associated file record when a product is deleted."
+  ],
+  "critical_code_review_comments": [
+    "server.py put_object/get_object/init_storage use the synchronous `requests` library and are called directly from async route handlers (admin_upload, get_file) — this blocks the event loop for the full duration of the storage round-trip. Highest-impact fix this iteration.",
+    "admin PATCH/DELETE filters ignore is_deleted, so soft-deleted docs remain writable.",
+    "server.py is 654 lines and mixes seed data, storage client, admin CRUD and checkout — consider splitting into routers/ (products, admin, checkout) and data/seed.py before it exceeds 700 lines.",
+    "compute_totals correctly merges DB products now; verified via COD checkout with a DB-created product (subtotal/shipping/total all correct).",
+    "Admin token is stored in localStorage as plain text and is a single shared static secret — acceptable for this MVP but should be called out to the user."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_admin_images.py (new)",
+    "/app/backend/tests/backend_test.py (relaxed hardcoded product-count assertions from == to >= since DB products now merge into /api/products)",
+    "/app/backend/tests/test_new_features.py (same count-assertion relaxation)"
+  ],
+  "success_rate": {"backend": "98.6% (70/71)", "frontend": "100% of tested flows"},
+  "seed_data_creation": "Created and then DELETED: 1 uploaded JPEG (via /api/admin/upload), product 'TEST_QA Playwright Kurti' (UI-created, deleted via UI), product 'TEST_QA Order Kurti' (API-created, deleted via API), plus pytest TEST_ products which the fixture cleans up. Newsletter entry test_qa_iter4@example.com and a COD order remain in DB (harmless). Remaining DB product not created by me: 'Test Ruby Kurti' (a77401c2-...) — created by the main agent.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "/app/memory/test_credentials.md is EMPTY (template only). Admin token was read from /app/backend/.env: ADMIN_TOKEN=zarahatke-admin-2026. Please record it in test_credentials.md.",
+  "context_for_next_testing_agent": "Verified this iteration: (1) /api/admin/verify 401/403/200 matrix; (2) upload of a JPG returns {id,url,path,size}, url=/api/files/{id}, GET returns exact bytes with Content-Type image/jpeg, unknown id -> 404, .txt -> 400, no-auth -> 401; (3) admin product create/patch/delete + seeded-id immutability (PATCH/DELETE na1 -> 404); (4) DB products are returned BEFORE seed products in GET /api/products?section=new_arrivals and in /api/categories/kurtis (confirmed visually: card order was [db-product, db-product, na1, na2, ...]); (5) COD checkout with a DB product computes subtotal 2x1111=2222... (verified 4444 for qty2 of 2222) and persists the order; (6) UI: /admin gate rejects a bad token with a toast and keeps the gate, accepts zarahatke-admin-2026, upload shows preview (naturalWidth>0, real bytes served), CREATE PRODUCT adds card to MY PRODUCTS, DELETE (native confirm) removes it, token persists in localStorage across reloads, product detail page for a DB product renders name/price/description and the /api/files image. Not re-tested: Stripe checkout path, wishlist, search, cart sheet (covered in iterations 1-3). Run backend suite with: cd /app/backend && python -m pytest tests/ -q (pytest.ini already adds -n auto).",
+  "rca_of_the_issue": "Only failing test: test_patch_deleted_product_should_404. Root cause — admin_update_product queries db.products.update_one({'id': product_id}) with no is_deleted filter, so a soft-deleted document still matches (matched_count=1) and the endpoint returns 200 with the updated doc. Reproduce: POST /api/admin/products -> DELETE it -> PATCH it with {'price':900}; expect 404, get 200. Fix: add \"is_deleted\": {\"$ne\": True} to the filter in both admin_update_product and admin_delete_product."
+}

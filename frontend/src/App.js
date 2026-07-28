@@ -10,6 +10,7 @@ import Checkout from "@/pages/Checkout";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
 import OrderConfirmation from "@/pages/OrderConfirmation";
+import Admin from "@/pages/Admin";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
               <Route path="/payment/success" element={<PaymentSuccess />} />
               <Route path="/payment/cancel" element={<PaymentCancel />} />
               <Route path="/order/:id" element={<OrderConfirmation />} />
+              <Route path="/admin" element={<Admin />} />
             </Route>
           </Routes>
         </BrowserRouter>
